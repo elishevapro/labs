@@ -16,7 +16,7 @@ contract Collectors {
   }
   function isCollector (address sender) view  private returns (bool) {
     bool allowed = false;
-    for (uint i=0; i<collectors.length; i++) 
+    for (uint i=0; i<3; i++) 
     {
         if(collectors[i]==sender)
             allowed=true;
@@ -35,8 +35,10 @@ contract Collectors {
     require(address(this).balance>=msg.value, "There is not enough");
     payable (msg.sender).transfer(msg.value);
   }
-  function addCollector(address newCollector) public view {
-    require(numCollectors<collectors.length, "there is enough collectors yet.");
+  function addCollector(address newCollector) public {
+    require(msg.sender==owner,"You don't have permission to add another collector");
+    require(numCollectors<3, "there is enough collectors yet.");
     require(!isCollector(newCollector),"this collector is allowed yet");
+    collectors[numCollectors++]=newCollector;
   }
 }
