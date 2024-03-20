@@ -1,5 +1,5 @@
 // SPDX-License-Identirier: GPL-0.3
-pragma solidity >=0.7.0 <0.9.0;
+pragma solidity ^0.8.15;
 /**
 * @title Ballot
 * @dev Implements voting process along with vote delegation

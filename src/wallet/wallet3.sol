@@ -1,5 +1,5 @@
 //SPDX-License-Identifier: MIT
-pragma solidity >=0.6.12 <0.9.0;
+pragma solidity ^0.8.15;
 
 contract Collectors {
     // Array memory cost cheapper than mapping memory, cause array allocated in memory while mapping not stored directly there
@@ -73,5 +73,8 @@ contract Collectors {
         require(success, "couldn't remove collector");
         return success;
     }
+    // function getCollectors() public view returns (address) {
+    //     return collector1;
+    // }
 }
 
