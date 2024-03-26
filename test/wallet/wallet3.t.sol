@@ -1,4 +1,4 @@
-// SPDX-Licensew-Identifier: Unlicense
+//SPDX-Licensew-Identifier: Unlicense
 pragma solidity ^0.8.15;
 
 import "foundry-huff/HuffDeployer.sol";
@@ -13,6 +13,9 @@ contract CollectorsTest is Test {
     address public collector1 = address(1);
     address public collector2 = address(2);
     address public collector3 = address(3);
+    address public randomAddress = address(4);
+    uint val = 10;
+    uint initialValue = 100;
     // OwnerUpOnly public upOnly;
 
     /// @dev initialize everything to the test
@@ -23,17 +26,40 @@ contract CollectorsTest is Test {
         // address my_add = address(c);
         // upOnly = new OwnerUpOnly();
     }
-
     function testDeposit() public {
         assertEq(0, address(c).balance);
-        uint value = 10;
-        console.log(value);
-        vm.prank(owner);
-        uint256 x = c.deposit(10);
-        assertEq(value, address(c).balance);
-        assertEq(x, address(c).balance);
+        vm.startPrank(collector1);
+        vm.deal(collector1, initialValue);
+        c.deposit{value: val}();
+        assertEq(val, address(c).balance);
+        vm.stopPrank();
     }
-
+    function testFailDeposit() public {
+        vm.startPrank(randomAddress);
+        vm.expectRevert("don't have enough amount");
+        c.deposit{value: val}();
+    }
+    function testWithdraw() public {
+        assertEq(0, address(c).balance);
+        vm.startPrank(collector1);
+        vm.deal(payable(address(c)),initialValue);
+        console.log(collector1.balance);
+        console.log(address(c).balance);
+        c.withdraw{value: val}();
+        assertEq(initialValue-val, address(c).balance);
+        assertEq(val, collector1.balance);
+        vm.stopPrank();
+    }
+    function testfailAddCollector() public {
+        vm.prank(address(123));
+        vm.expectRevert("Not owner");
+        c.addCollector(collector1);
+    }
+    function testfailRemoveCollector() public {
+        vm.prank(address(123));
+        vm.expectRevert("Not owner");
+        c.addCollector(collector1);
+    }
     function testAddCollector() public {
         c.addCollector(collector1);
         assertEq( c.collector1(), collector1, "add new collector");

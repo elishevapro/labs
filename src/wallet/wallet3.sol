@@ -15,14 +15,14 @@ contract Collectors {
         owner = msg.sender;
     }
     modifier isOwner() {
-        require(msg.sender==owner,"Not qwner");
+        require(msg.sender==owner,"Not owner");
         _;
     }
-    function deposit(uint256 amount) public payable returns (uint256) {
-        require(amount > 0, "can't donate a negative amount");
-        require(msg.sender.balance-amount >= 0, "don't have enough amount");
-        payable(address(this)).transfer(amount);
-        return address(this).balance;
+    receive() external payable {
+        require(msg.sender.balance-msg.value >= 0, "don't have enough amount");
+    }
+    function deposit() public payable {
+        payable(address(this)).transfer(msg.value);
     }
 
     function withdraw() public payable {
@@ -73,8 +73,7 @@ contract Collectors {
         require(success, "couldn't remove collector");
         return success;
     }
-    // function getCollectors() public view returns (address) {
-    //     return collector1;
-    // }
+    function getBalance() public view returns (uint) {
+        return address(this).balance;
+    }
 }
-
