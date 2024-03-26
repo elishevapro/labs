@@ -43,6 +43,8 @@ contract CollectorsTest is Test {
         assertEq(0, address(c).balance);
         vm.startPrank(collector1);
         vm.deal(payable(address(c)),initialValue);
+        console.log(address(this).balance);
+        payable(address(c)).transfer(20);
         console.log(collector1.balance);
         console.log(address(c).balance);
         c.withdraw{value: val}();

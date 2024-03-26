@@ -7,12 +7,12 @@ contract Collectors {
     // get variable - from state variable is cheapper than from array/mapping
     // set variable - equal in mapping, array and state variable
     // since all of that, I decided to use 3 state variables instead of mapping/array
-    address public owner;
+    address payable public owner;
     address public collector1;
     address public collector2;
     address public collector3;
     constructor () {
-        owner = msg.sender;
+        owner = payable(msg.sender);
     }
     modifier isOwner() {
         require(msg.sender==owner,"Not owner");
@@ -22,13 +22,16 @@ contract Collectors {
         require(msg.sender.balance-msg.value >= 0, "don't have enough amount");
     }
     function deposit() public payable {
+        // uint256 x= e;
         payable(address(this)).transfer(msg.value);
     }
-
-    function withdraw() public payable {
+// if i use a parameterת+, i get an error(with msg.valur, why??????????
+// what is the difference between parameter and msg.value?????????
+    function withdraw() external payable returns(uint){
         require(msg.sender==owner || msg.sender==collector1 ||  msg.sender==collector2 || msg.sender==collector3, "not allowed to withdraw");
         require(address(this).balance >= msg.value, "There is not enough");
         payable(msg.sender).transfer(msg.value);
+        return address(this).balance; 
     }
 
     function addCollector(address newCollector) public isOwner returns (bool) {
