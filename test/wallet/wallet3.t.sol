@@ -97,4 +97,9 @@ contract CollectorsTest is Test {
         vm.expectRevert("couldn't remove collector");
         c.removeCollector(collector1);
     }
+    function testGetBalance() public {
+        vm.deal(payable(address(c)), initialValue);
+        uint balance = c.getBalance();
+        assertEq(balance, initialValue);
+    }
 }
