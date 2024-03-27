@@ -22,15 +22,17 @@ contract Collectors {
         require(msg.sender.balance-msg.value >= 0, "don't have enough amount");
     }
     function deposit() public payable {
-        // uint256 x= e;
         payable(address(this)).transfer(msg.value);
     }
-// if i use a parameterת+, i get an error(with msg.valur, why??????????
+// if i use a parameter, i get an error(with msg.value), why??????????
 // what is the difference between parameter and msg.value?????????
-    function withdraw() external payable returns(uint){
+// i relized that for deposit- you need to use msg.value
+// and for withdraw - you need to use a parameter.
+// but I don't understand clearly why' and what is the differences between them.
+    function withdraw(uint256 amount) external payable returns(uint){
         require(msg.sender==owner || msg.sender==collector1 ||  msg.sender==collector2 || msg.sender==collector3, "not allowed to withdraw");
-        require(address(this).balance >= msg.value, "There is not enough");
-        payable(msg.sender).transfer(msg.value);
+        require(address(this).balance >= amount, "There is not enough");
+        payable(msg.sender).transfer(amount);
         return address(this).balance; 
     }
 

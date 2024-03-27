@@ -26,6 +26,7 @@ contract CollectorsTest is Test {
         // address my_add = address(c);
         // upOnly = new OwnerUpOnly();
     }
+    receive() external payable {}
     function testDeposit() public {
         assertEq(0, address(c).balance);
         vm.startPrank(collector1);
@@ -40,16 +41,30 @@ contract CollectorsTest is Test {
         c.deposit{value: val}();
     }
     function testWithdraw() public {
+        console.log(owner);
+        console.log(msg.sender);
+        console.log(address(this));
+        console.log(address(c));
+        console.log(owner);
         assertEq(0, address(c).balance);
-        vm.startPrank(collector1);
         vm.deal(payable(address(c)),initialValue);
         console.log(address(this).balance);
-        payable(address(c)).transfer(20);
-        console.log(collector1.balance);
         console.log(address(c).balance);
-        c.withdraw{value: val}();
+        console.log(msg.sender.balance);
+        // payable(address(c)).transfer(20);
+        // console.log(collector1.balance);
+        // console.log(address(c).balance);
+        uint256 firstBalance = msg.sender.balance;
+        console.log(firstBalance);
+        c.withdraw(val);
+        console.log(initialValue-val);
+        console.log(address(c).balance);
+        console.log(firstBalance+val);
+        console.log(msg.sender.balance);
+        console.log(address(this).balance);
+
         assertEq(initialValue-val, address(c).balance);
-        assertEq(val, collector1.balance);
+        assertEq(firstBalance+val, address(this).balance);
         vm.stopPrank();
     }
     function testfailAddCollector() public {
