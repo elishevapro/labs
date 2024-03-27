@@ -41,31 +41,25 @@ contract CollectorsTest is Test {
         c.deposit{value: val}();
     }
     function testWithdraw() public {
-        console.log(owner);
-        console.log(msg.sender);
-        console.log(address(this));
-        console.log(address(c));
-        console.log(owner);
+        //what is the difference between msg.sender and address(this)?
         assertEq(0, address(c).balance);
         vm.deal(payable(address(c)),initialValue);
-        console.log(address(this).balance);
-        console.log(address(c).balance);
-        console.log(msg.sender.balance);
-        // payable(address(c)).transfer(20);
-        // console.log(collector1.balance);
-        // console.log(address(c).balance);
-        uint256 firstBalance = msg.sender.balance;
-        console.log(firstBalance);
+        uint256 firstBalance = address(this).balance;
         c.withdraw(val);
-        console.log(initialValue-val);
-        console.log(address(c).balance);
-        console.log(firstBalance+val);
-        console.log(msg.sender.balance);
-        console.log(address(this).balance);
-
         assertEq(initialValue-val, address(c).balance);
         assertEq(firstBalance+val, address(this).balance);
         vm.stopPrank();
+    }
+    function testNotAllowedWithdraw() public {
+        vm.startPrank(randomAddress);
+        vm.expectRevert("not allowed");
+        c.withdraw(val);
+    }
+    function testNoMoneyWithdraw() public {
+        c.addCollector(collector1);
+        vm.startPrank(collector1);
+        vm.expectRevert("no money");
+        c.withdraw(val);
     }
     function testfailAddCollector() public {
         vm.prank(address(123));
@@ -85,7 +79,7 @@ contract CollectorsTest is Test {
         c.addCollector(collector1);
         c.addCollector(collector2);
         c.addCollector(collector3);
-        collector1 = address(8);
+        collector1 = randomAddress;
         vm.expectRevert("couldn't add collector");
         c.addCollector(collector1);
     }

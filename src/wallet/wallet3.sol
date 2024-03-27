@@ -30,8 +30,8 @@ contract Collectors {
 // and for withdraw - you need to use a parameter.
 // but I don't understand clearly why' and what is the differences between them.
     function withdraw(uint256 amount) external payable returns(uint){
-        require(msg.sender==owner || msg.sender==collector1 ||  msg.sender==collector2 || msg.sender==collector3, "not allowed to withdraw");
-        require(address(this).balance >= amount, "There is not enough");
+        require(msg.sender==owner || msg.sender==collector1 ||  msg.sender==collector2 || msg.sender==collector3, "not allowed");
+        require(address(this).balance >= amount, "no money");
         payable(msg.sender).transfer(amount);
         return address(this).balance; 
     }
