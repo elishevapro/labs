@@ -34,12 +34,12 @@ contract CollectorsTest is Test {
         assertEq(val, address(c).balance);
         vm.stopPrank();
     }
-    function testFuzz_FailDeposit() public {
+    function testFuzz_FailDeposit(uint val) public {
         vm.startPrank(randomAddress);
         vm.expectRevert("don't have enough amount");
         c.deposit{value: val}();
     }
-    function testFuzz_Withdraw() public {
+    function testFuzz_Withdraw(uint initialValue, uint val) public {
         //what is the difference between msg.sender and address(this)?
         assertEq(0, address(c).balance);
         vm.deal(payable(address(c)),initialValue);
@@ -50,12 +50,12 @@ contract CollectorsTest is Test {
         assertEq(firstBalance+val, address(this).balance);
         vm.stopPrank();
     }
-    function testFuzz_WithdrawNotAllowed() public {
+    function testFuzz_WithdrawNotAllowed(uint val) public {
         vm.startPrank(randomAddress);
         vm.expectRevert("not allowed");
         c.withdraw(val);
     }
-    function testFuzz_WithdrawNoMoney() public {
+    function testFuzz_WithdrawNoMoney(uint val) public {
         c.addCollector(collector1);
         vm.startPrank(collector1);
         vm.expectRevert("no money");
@@ -97,7 +97,7 @@ contract CollectorsTest is Test {
         vm.expectRevert("couldn't remove collector");
         c.removeCollector(collector1);
     }
-    function testFuzz_GetBalance() public {
+    function testFuzz_GetBalance(uint initialValue) public {
         vm.deal(payable(address(c)), initialValue);
         uint balance = c.getBalance();
         assertEq(balance, initialValue);
