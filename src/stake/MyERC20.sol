@@ -1,35 +1,29 @@
-//SPDX-License-Identifier: MIT
+//SPDX-License-Idntifier: MIT
 pragma solidity ^0.8.20;
-
-import "foundry-huff/HuffDeployer.sol";
-import "forge-std/Test.sol";
-import "forge-std/console.sol";
-// import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-import "../../lib/solmate/src/tokens/ERC20.sol";
-
-contract Stake is ERC20 {
+import "@openzeppelin/ERC20/ERC20.sol";
+import "@openzeppelin/ERC20/extensions/ERC20Permit.sol";
+contract MyERC20 is ERC20, ERC20Permit {
     address public owner;
-    // ERC20 public immutable erc20;
     uint public totalReward;
     uint public totalStaked;
     mapping(address=>uint) public stakedAmounts;
     mapping(address=>uint) public beginDates;
-    constructor() ERC20('COIN', 'CN',18) {
-        totalReward = 1000000;
+    constructor() ERC20("MyToken", "MTK") ERC20Permit("MyToken")  {
+        totalReward = 1000000000;
         owner = msg.sender;
-        // erc20 = new ERC20('COIN', 'CN',18);
-        // erc20.
         _mint(address(this), totalReward);
-        // address(this).balance+=1000;??????????
     }
     receive() external payable {
         require(msg.sender.balance>=msg.value, "not enough money");
+    }
+    function send(address to, uint amount) external {
+        _mint(to, amount);
     }
     function stake() external payable{
         require(msg.value>0, "must be positive amount");
         stakedAmounts[msg.sender] += msg.value;
         beginDates[msg.sender] = block.timestamp;
-        console.log(block.timestamp);
+        //console.log(block.timestamp);
         totalStaked+=msg.value;
         payable(address(this)).transfer(msg.value);
     }
