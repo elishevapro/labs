@@ -1,0 +1,12 @@
+A countract owns 1000000 cloud tokens. Anyone could stakes cloud token into the contract. The staked amount is locked for 7 days (if you add staking, the 7 days starts from the last day you staked).
+When you withdraw you get your original staked amount + a reward(the reward is constantly 10000000) propotional to your portion of the total stake at that time.
+exaample:
+total staked amout=100000
+Staker 1: Stakes 5,000 tokens on day 2 (beginDate 2)   ||    total staked amout = 105000
+Staker 2: Stakes 10,000 tokens on day 3 (beginDate 3)  ||    total staked amout = 115000
+Staker 3: Stakes 7,000 tokens on day 5 (beginDate 5)   ||    total staked amout = 122000
+
+
+Staker 1: After 7 days (on day 9), calculates a reward of 40,983 tokens (assuming total stake remains 122,000) - [(5,000 * 1,000,000) / 122,000]
+Staker 2: After 9 days (on day 12), calculates a reward of 8,547 tokens (assuming total stake remains 117,000) - [(10,000 * 1,000,000) / 117,000]
+Staker 3: After 7 days (on day 12), calculates a reward of 65,420 tokens (assuming total stake remains 107,000) - [(7,000 * 1,000,000) / 107,000]
