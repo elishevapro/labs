@@ -35,9 +35,9 @@ contract AMM1{
    
      function tradeAToB(uint amount) public payable{
         require();
-        tokenA.transferFrom(msg.sender , address(this) , WAD *amount);
-        tokenB.transfer(msg.sender , amountB - kfactor );
-        
+        tokenA.transferFrom(msg.sender , address(this) , amount);
+        tokenB.transfer(msg.sender , amountB - kfactor/amountA );
+
         
      
      }
@@ -46,8 +46,8 @@ contract AMM1{
      function addLiquidity(uint value) public payable{
         // require(tA > 0 && tB > 0 && tA == tB, "The sum of the coins must be bigger than zero and equal");
         require(value > 0 ,"The sum of the coins must be bigger than zero");
-        uint amountTA = (WAD * value / price(tokenA))/WAD;
-        uint amountTB = (WAD * value / price(tokenB))/WAD;
+        uint amountTA = (WAD * value / price(tokenA));
+        uint amountTB = (WAD * value / price(tokenB));
         require(tokenA.balanceOf(msg.sender) >= amountTA && tokenB.balanceOf(msg.sender) >= amountTB, "You don't have enough money" );
         tokenA.transferFrom(msg.sender ,address(this), amountTA);
         tokenB.transferFrom(msg.sender ,address(this), amountTB);
@@ -60,8 +60,8 @@ contract AMM1{
         require(value > 0, "The sum of the coins must be bigger than zero");
         require(value <= liquidityProviders[msg.sender] ,"You don't have enough liquidity to pull");
         // uint percent = WAD * liquidityProviders[msg.sender] / kFactors**2 ;
-        uint amountTA = (WAD * value / price(tokenA))/WAD;
-        uint amountTB = (WAD * value / price(tokenB))/WAD;
+        uint amountTA = (WAD * value / price(tokenA));
+        uint amountTB = (WAD * value / price(tokenB));
         tokenA.transfer( msg.sender, amountTA);
         tokenB.transfer(msg.sender , amountTB);
         amountA -= amountTA;
