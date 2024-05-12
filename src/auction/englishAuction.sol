@@ -68,8 +68,9 @@ contract Auctions {
         token.transferFrom(address(this), isSeller ? auctions[tokenID].seller : auctions[tokenID].highestBidder, tokenID);
         if(!isSeller)
             payable(auctions[tokenID].seller).transfer(auctions[tokenID].highestBid);
+        delete bids[tokenID][auctions[tokenID].highestBidder];
         for(uint i=0;i<auctions[tokenID].addresses.length;i++){
-            if(auctions[tokenID].addresses[i] != auctions[tokenID].highestBidder)
+            if(bids[tokenID][auctions[tokenID].addresses[i]]>0)
                 payable(auctions[tokenID].addresses[i]).transfer(bids[tokenID][auctions[tokenID].addresses[i]]);
         }
         emit end(tokenID, auctions[tokenID].highestBidder);
