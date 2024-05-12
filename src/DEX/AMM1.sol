@@ -34,9 +34,9 @@ contract AMM1{
     }
    
      function tradeAToB(uint amount) public payable{
-        require();
+      //   require();
         tokenA.transferFrom(msg.sender , address(this) , amount);
-        tokenB.transfer(msg.sender , amountB - kfactor/amountA );
+        tokenB.transfer(msg.sender , amountB - kFactors/amountA );
 
         
      
