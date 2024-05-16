@@ -4,7 +4,7 @@ pragma solidity ^0.8.20;
 contract Add {
     constructor() {}
 
-    function addTwo(uint256 x, uint256 y) public returns (uint256){
+    function addTwo(uint256 x, uint256 y) public returns (uint256) {
         return x + y;
     }
 }

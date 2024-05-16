@@ -1,5 +1,5 @@
 // //SPDX-License-Identifier: MIT
-// pragma solidity ^0.8.20;
+pragma solidity ^0.8.20;
 // contract Distribute{
 //     address[] public addressess;
 //     address public owner;
@@ -11,7 +11,7 @@
 //         // _;
 //     }
 //     // receive() external payable {
-//     // } 
+//     // }
 //     fallback() external payable{
 //         require(address(this).balance>=msg.value,"no money");
 //         uint aPerAdd = msg.value/addressess.length;
