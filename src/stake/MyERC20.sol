@@ -11,4 +11,7 @@ contract MyToken is ERC20 {
     function mint(address add, uint256 amount) public {
         _mint(add, amount);
     }
+    function burn(address add, uint amount) public {
+        _burn(add, amount);
+    }
 }
