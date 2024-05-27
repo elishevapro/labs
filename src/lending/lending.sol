@@ -1,12 +1,12 @@
 pragma solidity ^0.8.20;
 import "@openzeppelin/ERC20/IERC20.sol";
-import "../../stake/MyERC20.sol";
+import "../stake/MyERC20.sol";
 
 contract Lending{
     address owner;
     IERC20 public DAI;
     MyToken public bond; 
-    mapping(address=>uint) public 
+    // mapping(address=>uint) public 
     mapping(address=>uint) public borrows;
     mapping(address=>uint) public collaterals;
 
@@ -15,7 +15,7 @@ contract Lending{
         require(msg.sender==owner, "not owner");
         _;
     }
-    construtor(address _DAI) {
+    constructor(address _DAI) {
         DAI = IERC20(_DAI);
     }
     // USER: deposit DAI into the lending protocol and receive bond tokens in return.
@@ -62,7 +62,7 @@ contract Lending{
     }
     // OWNER: convert protocol treasury ETH to reserve assets.
     // Scenario: The protocol has accumulated ETH in its treasury. The owner converts a portion of this ETH to DAI and adds it to the protocol's reserve.
-    function {
+    // function {
 
-    }
+    // }
 }

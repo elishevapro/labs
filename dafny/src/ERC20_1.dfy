@@ -73,5 +73,6 @@ class ERC20_1 {
 
     r := Result<bool>.Ok(true);
   }
+  method transferSpec(msg: Transaction, recipient: u160, amount: u256)
 
 }
