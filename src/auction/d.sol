@@ -1,4 +1,4 @@
-pragma solidity ^0.8.20;
+pragma solidity ^0.8.19;
 
 import "forge-std/console.sol";
 import "../../lib/openzeppelin-contracts/contracts/token/ERC721/IERC721.sol";

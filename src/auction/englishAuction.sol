@@ -2,7 +2,7 @@
 // import "@openzeppelin/ERC721/ERC721.sol";
 import "@openzeppelin/ERC721/IERC721.sol";
 
-pragma solidity ^0.8.20;
+pragma solidity ^0.8.19;
 
 contract Auctions {
     struct Auction {

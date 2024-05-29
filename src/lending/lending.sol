@@ -1,68 +1,121 @@
-pragma solidity ^0.8.20;
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.19;
+import "@openzeppelin/ERC20/ERC20.sol";
 import "@openzeppelin/ERC20/IERC20.sol";
-import "../stake/MyERC20.sol";
+import "@openzeppelinAccess/Ownable.sol";
+import "@hack/tokens/MyERC20.sol";
+//import "";
+import "forge-std/console.sol";
+import "@hack/math/mathLend.sol";
+import "@hack/math/math.sol";
+import "@hack/libs/safemath.sol";
+// import "./myAAVE.sol";
+interface ILendingPool {
+    function deposit(
+        address asset,
+        uint256 amount,
+        address onBehalfOf,
+        uint16 referralCode
+    ) external;
 
-contract Lending{
-    address owner;
-    IERC20 public DAI;
-    MyToken public bond; 
-    // mapping(address=>uint) public 
-    mapping(address=>uint) public borrows;
-    mapping(address=>uint) public collaterals;
+    function withdraw(
+        address asset,
+        uint256 amount,
+        address to
+    ) external returns (uint256);
+}
 
+interface IWETHGateway {
+    function depositETH(
+        address lendingPool,
+        address onBehalfOf,
+        uint16 referralCode
+    ) external payable;
 
-    modifier onlyOwner() {
-        require(msg.sender==owner, "not owner");
+    function withdrawETH(
+        address lendingPool,
+        uint256 amount,
+        address onBehalfOf
+    ) external;
+}
+contract Lend is Mathematics, Ownable, DSMath{
+    using SafeMath for uint256;
+    // address public owner;
+    mapping(address=>uint) public userBorrowed;
+    mapping(address=>uint) public userCollateral;
+    //mapping(address=>uint) public depositDAI;
+    // IERC20 public dai;
+    MyToken public bond;
+    uint256 public totalBorrowed;
+    uint256 public totalReserve;
+    uint256 public totalDeposit;
+    uint256 public maxLTV = 4; // 1 = 20%
+    uint256 public ethTreasury;
+    uint256 public totalCollateral;
+    uint256 public baseRate = 20000000000000000;
+    uint256 public fixedAnnuBorrowRate = 300000000000000000;
+    ILendingPool public constant aave = ILendingPool(0xFf795577d9AC8bD7D90Ee22b6C1703490b6512FD);
+    IWETHGateway public constant wethGateway =
+        IWETHGateway(0xA61ca04DF33B72b235a8A28CfB535bb7A5271B70);
+    IERC20 public constant dai =
+        IERC20(0xFf795577d9AC8bD7D90Ee22b6C1703490b6512FD);
+    IERC20 public constant aDai =
+        IERC20(0xdCf0aF9e59C002FA3AA091a46196b37530FD48a8);
+    IERC20 public constant aWeth =
+        IERC20(0x87b1f4cf9BD63f7BBD3eE1aD04E8F52540349347);
+    IERC20 private constant weth =
+        IERC20(0xd0A1E359811322d97991E03f863a0C30C2cF029C);
+
+    modifier amountPositive(uint amount){
+        require(amount > 0, "Must be bigger than zero");
         _;
     }
-    constructor(address _DAI) {
-        DAI = IERC20(_DAI);
+    constructor(address _bond, address initialOwner) Ownable(initialOwner){
+        bond = MyToken(_bond);
     }
-    // USER: deposit DAI into the lending protocol and receive bond tokens in return.
-    // Scenario: Alice wants to earn interest on her DAI holdings. She deposits 100 DAI into the protocol and receives corresponding bond tokens.
-    function deposit() public {
-
+    
+    function _sendDaiToAave(uint256 _amount) internal {
+        dai.approve(address(aave), _amount);
+        aave.deposit(address(dai), _amount, address(this), 0);
     }
-    // USER: unbond bond tokens and receive DAI in return.
-    // Scenario: Bob decides to withdraw some of his deposited DAI. He burns 50 bond tokens and receives 50 DAI in return.
-    function unbond(uint amount) public {
 
+    function _withdrawDaiFromAave(uint256 _amount) internal {
+        aave.withdraw(address(dai), _amount, msg.sender);
     }
-    // USER: add ETH as collateral to borrow assets from the protocol.
-// Scenario: Charlie wants to borrow DAI. He adds 1 ETH as collateral to the protocol, enabling him to borrow up to a certain limit.
-    function addCollateral() public {
 
+    function _sendWethToAave(uint256 _amount) internal {
+        wethGateway.depositETH{value: _amount}(address(aave), address(this), 0);
     }
-    // USER: remove ETH collateral from the protocol.
-    // Scenario: Dave decides to remove some of his collateral from the protocol. He withdraws 0.5 ETH from his collateral pool.
-    function removeCollateral(uint amount) public {
 
+    function _withdrawWethFromAave(uint256 _amount) internal {
+        aWeth.approve(address(wethGateway), _amount);
+        wethGateway.withdrawETH(address(aave), _amount, address(this));
     }
-    // USER: borrow assets from the protocol using my deposited collateral.
-    // Scenario: Eve needs to borrow 100 DAI. She has sufficient ETH collateral deposited in the protocol, allowing her to borrow the desired amount.
-    function borrow(uint amount) public {
 
+    function bondAsset(uint _amount) external amountPositive(_amount){
+        dai.transferFrom(msg.sender,address(this), _amount);
+        totalDeposit += _amount;
+        _sendDaiToAave(_amount);
+        uint bondsToMint = getExp(_amount, getExchangeRate());
+        bond.mint(msg.sender, bondsToMint);
+    } 
+
+    function unbondAsset(uint256 _amount) external {
+        require(_amount <= bond.balanceOf(msg.sender), "Not enough bonds!");
+        uint256 daiToReceive = mulExp(_amount, getExchangeRate());
+        totalDeposit -= daiToReceive;
+        bond.burn(msg.sender, _amount);
+        _withdrawDaiFromAave(daiToReceive);
     }
-    // USER: repay borrowed assets to reduce my debt.
-    // Scenario: Frank has borrowed 50 DAI from the protocol. He repays the entire amount along with the applicable borrowing fee.
-    function repay() public {
-
+    function getExchangeRate() public view returns (uint256) {
+        if (bond.totalSupply() == 0) {
+            return 1000000000000000000;
+        }
+        uint256 cash = getCash();
+        uint256 num = cash.add(totalBorrowed).add(totalReserve);
+        return getExp(num, bond.totalSupply());
     }
-    /////////// owner /////////////////
-
-    // OWNER: trigger liquidation of user positions when their collateral value falls below a certain threshold.
-    // Scenario: The protocol owner observes that a user's borrowed amount exceeds their collateral value beyond the specified maximum loan-to-value ratio. The owner initiates liquidation of the user's position to recover the borrowed assets.
-    function liquidation() public onlyOwner {
-
-    }
-    // OWNER: harvest(get) rewards accrued by the protocol.
-    // Scenario: The protocol has accumulated rewards=aWETH tokens. The owner harvests these rewards and converts them to ETH.
-    function getRewards() public onlyOwner {
-
-    }
-    // OWNER: convert protocol treasury ETH to reserve assets.
-    // Scenario: The protocol has accumulated ETH in its treasury. The owner converts a portion of this ETH to DAI and adds it to the protocol's reserve.
-    // function {
-
-    // }
+    function getCash() public view returns (uint256) {
+        return totalDeposit.sub(totalBorrowed);
+    }    
 }
