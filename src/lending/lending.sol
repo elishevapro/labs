@@ -58,7 +58,7 @@ contract Lend is Mathematics, Ownable, DSMath{
     IWETHGateway public constant wethGateway =
         IWETHGateway(0xA61ca04DF33B72b235a8A28CfB535bb7A5271B70);
     IERC20 public constant dai =
-        IERC20(0xFf795577d9AC8bD7D90Ee22b6C1703490b6512FD);
+        IERC20(0x371c105Bb1A175C16DE8e32BaB8Fe6aA817a04A8);
     IERC20 public constant aDai =
         IERC20(0xdCf0aF9e59C002FA3AA091a46196b37530FD48a8);
     IERC20 public constant aWeth =
@@ -66,6 +66,11 @@ contract Lend is Mathematics, Ownable, DSMath{
     IERC20 private constant weth =
         IERC20(0xd0A1E359811322d97991E03f863a0C30C2cF029C);
 
+    AggregatorV3Interface internal constant priceFeed =
+        AggregatorV3Interface(0x9326BFA02ADD2366b30bacB125260Af641031331);
+    IUniswapRouter public constant uniswapRouter =
+        IUniswapRouter(0xE592427A0AEce92De3Edee1F18E0157C05861564);
+        
     modifier amountPositive(uint amount){
         require(amount > 0, "Must be bigger than zero");
         _;
@@ -106,6 +111,29 @@ contract Lend is Mathematics, Ownable, DSMath{
         totalDeposit -= daiToReceive;
         bond.burn(msg.sender, _amount);
         _withdrawDaiFromAave(daiToReceive);
+    }
+    function addCollateral() external payable {
+        require(msg.value != 0, "Cant send 0 ethers");
+        usersCollateral[msg.sender] += msg.value;
+        totalCollateral += msg.value;
+        _sendWethToAave(msg.value);
+    }
+    function removeCollateral(uint256 _amount) external {
+        uint256 wethPrice = uint256(_getLatestPrice());
+        uint256 collateral = usersCollateral[msg.sender];
+        require(collateral > 0, "Dont have any collateral");
+        uint256 borrowed = usersBorrowed[msg.sender];
+        uint256 amountLeft = mulExp(collateral, wethPrice).sub(borrowed);
+        uint256 amountToRemove = mulExp(_amount, wethPrice);
+        require(amountToRemove < amountLeft, "Not enough collateral to remove");
+        usersCollateral[msg.sender] -= _amount;
+        totalCollateral -= _amount;
+        _withdrawWethFromAave(_amount);
+        payable(address(this)).transfer(_amount);
+    }
+    function _getLatestPrice() public view returns (int256) {
+        (, int256 price, , , ) = priceFeed.latestRoundData();
+        return price * 10**10;
     }
     function getExchangeRate() public view returns (uint256) {
         if (bond.totalSupply() == 0) {
