@@ -9,6 +9,8 @@ import "forge-std/console.sol";
 import "@hack/math/mathLend.sol";
 import "@hack/math/math.sol";
 import "@hack/libs/safemath.sol";
+import "@chainlink/contracts/src/v0.8/shared/interfaces/AggregatorV3Interface.sol";
+import "./interfaces/ISwapRouter.sol";
 // import "./myAAVE.sol";
 interface ILendingPool {
     function deposit(
@@ -38,11 +40,15 @@ interface IWETHGateway {
         address onBehalfOf
     ) external;
 }
+interface IUniswapRouter is ISwapRouter {
+    function refundETH() external payable;
+}
+
 contract Lend is Mathematics, Ownable, DSMath{
     using SafeMath for uint256;
     // address public owner;
-    mapping(address=>uint) public userBorrowed;
-    mapping(address=>uint) public userCollateral;
+    mapping(address=>uint) public usersBorrowed;
+    mapping(address=>uint) public usersCollateral;
     //mapping(address=>uint) public depositDAI;
     // IERC20 public dai;
     MyToken public bond;
