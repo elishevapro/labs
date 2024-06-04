@@ -3,6 +3,7 @@ pragma solidity ^0.8.19;
 import "@openzeppelin/ERC20/ERC20.sol";
 import "@openzeppelin/ERC20/IERC20.sol";
 import "@openzeppelinAccess/Ownable.sol";
+import "@chainlink/contracts/src/v0.8/shared/interfaces/AggregatorV3Interface.sol";
 import "@hack/tokens/MyERC20.sol";
 //import "";
 import "forge-std/console.sol";
@@ -38,6 +39,9 @@ interface IWETHGateway {
         address onBehalfOf
     ) external;
 }
+interface IUniswapRouter is ISwapRouter {
+    function refundETH() external payable;
+}
 contract Lend is Mathematics, Ownable, DSMath{
     using SafeMath for uint256;
     // address public owner;
@@ -70,7 +74,7 @@ contract Lend is Mathematics, Ownable, DSMath{
         AggregatorV3Interface(0x9326BFA02ADD2366b30bacB125260Af641031331);
     IUniswapRouter public constant uniswapRouter =
         IUniswapRouter(0xE592427A0AEce92De3Edee1F18E0157C05861564);
-        
+
     modifier amountPositive(uint amount){
         require(amount > 0, "Must be bigger than zero");
         _;
@@ -129,8 +133,51 @@ contract Lend is Mathematics, Ownable, DSMath{
         usersCollateral[msg.sender] -= _amount;
         totalCollateral -= _amount;
         _withdrawWethFromAave(_amount);
-        payable(address(this)).transfer(_amount);
+        payable(msg.sender).transfer(_amount);
     }
+
+    function borrow(uint256 _amount) external {
+        require(_amount <= _borrowLimit(), "No collateral enough");
+        usersBorrowed[msg.sender] += _amount;
+        totalBorrowed += _amount;
+        _withdrawDaiFromAave(_amount);
+    }
+    function repay(uint256 _amount) external {
+        require(usersBorrowed[msg.sender] > 0, "Doesnt have a debt to pay");
+        dai.transferFrom(msg.sender, address(this), _amount);
+        (uint256 fee, uint256 paid) = calculateBorrowFee(_amount);
+        usersBorrowed[msg.sender] -= paid;
+        totalBorrowed -= paid;
+        totalReserve += fee;
+        _sendDaiToAave(_amount);
+    }
+
+    function calculateBorrowFee(uint256 _amount)
+        public
+        view
+        returns (uint256, uint256)
+    {
+        uint256 borrowRate = _borrowRate();
+        uint256 fee = mulExp(_amount, borrowRate);
+        uint256 paid = _amount.sub(fee);
+        return (fee, paid);
+    }
+
+    function liquidation(address _user) external onlyOwner {
+        uint256 wethPrice = uint256(_getLatestPrice());
+        uint256 collateral = usersCollateral[_user];
+        uint256 borrowed = usersBorrowed[_user];
+        uint256 collateralToUsd = mulExp(wethPrice, collateral);
+        if (borrowed > percentage(collateralToUsd, maxLTV)) {
+            _withdrawWethFromAave(collateral);
+            uint256 amountDai = _convertEthToDai(collateral);
+            totalReserve += amountDai;
+            usersBorrowed[_user] = 0;
+            usersCollateral[_user] = 0;
+            totalCollateral -= collateral;
+        }
+    }
+    //value of ETH in Dai
     function _getLatestPrice() public view returns (int256) {
         (, int256 price, , , ) = priceFeed.latestRoundData();
         return price * 10**10;
@@ -142,6 +189,17 @@ contract Lend is Mathematics, Ownable, DSMath{
         uint256 cash = getCash();
         uint256 num = cash.add(totalBorrowed).add(totalReserve);
         return getExp(num, bond.totalSupply());
+    }
+    
+    function _borrowLimit() public view returns (uint256) {
+        uint256 amountLocked = usersCollateral[msg.sender];
+        require(amountLocked > 0, "No collateral found");
+        uint256 amountBorrowed = usersBorrowed[msg.sender];
+        uint256 wethPrice = uint256(_getLatestPrice());
+        uint256 amountLeft = mulExp(amountLocked, wethPrice).sub(
+            amountBorrowed
+        );
+        return percentage(amountLeft, maxLTV);
     }
     function getCash() public view returns (uint256) {
         return totalDeposit.sub(totalBorrowed);
