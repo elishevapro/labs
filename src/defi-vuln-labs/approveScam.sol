@@ -41,6 +41,7 @@ contract ERC20 is IERC20 {
     string public name = "test example";
     string public symbol = "test";
     uint8 public decimals = 18;
+    function balanceOf
     function transfer(address spender, uint amount) public returns (bool) {
         balances[msg.sender] -= amount;
         balances[spender] += amount;
