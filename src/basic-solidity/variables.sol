@@ -4,7 +4,7 @@ contract Variables {
     //state - stored to the blockchain
     string public text = "Hello";
     uint public num = 123;
-    function doSomething() public {
+    function doSomething() public view {
         // local
         uint num1 = 34;
         // global - show info from the blockchain
